@@ -1,138 +1,98 @@
 const Customer = require("../models/customer");
 
 exports.create = async (req, res) => {// Validate request
-    if(!req.body) {
+    if (!req.body) {
         return res.status(400).send({
             status: "fail",
             message: "Transaction content can not be empty"
         });
     }
 
+    const { name, phone_number } = req.body;
+
     const customer = new Customer({
-        name: req.body.name,
-        phone_number: req.body.phone
+        name,
+        phone_number
     });
 
-    const result = await customer.save()
+    await customer.save();
 
     res.status(200).json({
-        status: "success",
+        status: 'success',
         data: {
-            id: customer._id,
+            id: customer_id,
             name: customer.name,
-            phone: customer.phone_number
+            phone: customer.phone
         }
-    });
+    })
 }
 
-exports.getById = (req, res) => {
+exports.getById = async (req, res) => {
     try {
-        Customer.findById(req.params.customerId, (error, customer) => {
-            if(error) {
-                res.status(404).send({
-                    status: "fail",
-                    message: error.message
-                });
-            } else {
-                res.status(200).json({
-                    status: "success",
-                    data: {
-                        id: customer._id,
-                        name: customer.name,
-                        phone: customer.phone_number
-                    }
-                })
+        const id = req.params.customerId
+        const customer = await Customer.findById(id);
+        if (!customer) return res.status(404).json({ status: 'fail' })
+        res.status(200).json({
+            status: 'success',
+            data: {
+                id: customer_id,
+                name: customer.name,
+                phone: customer.phone_number
             }
-        });
-    } catch (error) {
-        res.status(500).json({
-            status: "fail",
-            message: error.message,
-        });
+        })
+    } catch (e) {
+        res.status(401).send(e);
     }
 }
 
-exports.updateById = (req, res) => {
+exports.updateById = async (req, res) => {
     try {
-        Customer.findById(req.params.customerId, (error, customer) => {
-            if(error) {
-                res.status(404).send({
-                    status: "fail",
-                    message: error.message
-                });
-            } else {
-                customer.name = req.body.name
-                customer.phone_number = req.body.phone
-                customer.save()
-                res.status(200).json({
-                    status: "success",
-                    data: {
-                        id: customer._id,
-                        name: customer.name,
-                        phone: customer.phone_number
-                    }
-                })
+        const customer = await Customer.findByIdAndUpdate(req.params.customerId, req.body, { new: true, runValidators: true });
+        if (!customer) return res.status(404).send({ status: 'fail' })
+        res.status(200).json({
+            status: 'success',
+            data: {
+                id: customer._id,
+                name: customer.name,
+                phone: customer.phone_number
             }
-        });
-    } catch (error) {
-        res.status(500).json({
-            status: "fail",
-            message: error.message,
-        });
+        })
+    } catch (e) {
+        res.status(401).send(e);
     }
 }
 
-exports.deleteById = (req, res) => {
+exports.deleteById = async (req, res) => {
     try {
-        Customer.findByIdAndDelete(req.params.customerId, (error, customer) => {
-            if(error) {
-                res.status(404).json({
-                    status: "fail",
-                    //message: error.message,
-                });
-            } else if(!customer) {
-                res.status(404).json({
-                    status: "fail",
-                    message: "Not found",
-                });
-            } else {
-                res.status(200).json({
-                    status: "success",
-                    data: {
-                        id: customer._id,
-                        name: customer.name,
-                        phone: customer.phone_number
-                    }
-                })
+        const customer = await Customer.findByIdAndDelete(req.params.customerId);
+        if (!customer) return res.status(404).json({ status: 'fail', message: 'Not found' });
+        res.status(200).json({
+            status: 'success',
+            data: {
+                id: customer._id,
+                name: customer.name,
+                phone: customer.phone_number
             }
-        });
-    } catch (error) {
-        res.status(500).json({
-            status: "fail",
-            message: error.message,
-        });
+        })
+    } catch (e) {
+        res.status(401).send(e);
     }
 }
 
 exports.getAll = async (req, res) => {
     try {
-        let customers = await Customer.find().select("-__v").sort({
-            createdAt: -1,
-        });
-        if (!customers) {
-            return next(new Error("Something went wrong"));
-        }
-      
+        const customers = await Customer.find({}).select('-__v').sort({ createdAt: -1 });
+        if (!customers) return next(new Error('Something went wrong'));
         res.status(200).json({
-            status: "success",
+            status: 'success',
             result: customers.length,
-            data: customers,
-        });
-    } catch (error) {
+            data: customers
+        })
+    } catch (e) {
         res.status(500).json({
-            status: "fail",
-            message: error.message,
-        });
+            status: 'fail',
+            message: e.message
+        })
     }
 };
 
