@@ -30,6 +30,12 @@ app.use(expressValidator());
 const passport = require("passport");
 const Strategy = require('passport-facebook').Strategy;
 
+app.use(passport.initialize());
+
+require('./util/passport')(passport);
+// google auth login route
+const auth = require('./routes/auth');
+
 mongoose.Promise = global.Promise;
 
 // Connecting to the database
@@ -71,6 +77,8 @@ app.use(complainRouter);
 app.use(user);
 app.use(docs);
 app.use("/register", register);
+// GOOGLE LOGIN SIGNIN
+app.use('/auth', auth);
 
 // CONFIGURE FACEBOOK SIGNIN
 app.use(passport.initialize());
@@ -86,15 +94,15 @@ passport.use(new Strategy({
     'displayName'
   ],
 },
-function(accessToken, refreshToken, profile, cb) {
-  return cb(null, profile);
-}));
+  function (accessToken, refreshToken, profile, cb) {
+    return cb(null, profile);
+  }));
 
-passport.serializeUser(function(user, cb) {
+passport.serializeUser(function (user, cb) {
   cb(null, user);
 });
 
-passport.deserializeUser(function(obj, cb) {
+passport.deserializeUser(function (obj, cb) {
   cb(null, obj);
 });
 
@@ -107,7 +115,7 @@ app.use("*", (req, res) => {
   res.status(404).json({
     success: "false",
     message: "Page not found",
-    error:{
+    error: {
       statusCode: 404,
       message: "You reached a route that is not defined on this server"
     }
@@ -116,5 +124,5 @@ app.use("*", (req, res) => {
 
 const port = process.env.PORT || API_PORT;
 app.listen(port, () => {
-  console.log(`app running on port:`+ port);
+  console.log(`app running on port:` + port);
 });
